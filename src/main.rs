@@ -4,12 +4,12 @@ mod vlm;
 
 use vlm::Vlm;
 
-use termplot::*;
-
 const N: usize = 250;
 
 const SPAN: f64 = 10.0;
-const CHORD: f64 = 1.0;
+
+const ROOT_CHORD: f64 = 1.0;
+const TIP_CHORD: f64 = 0.0;
 
 const ROOT_AOA: f64 = 0.0;
 const TIP_AOA: f64 = -2.0;
@@ -34,9 +34,17 @@ fn main() {
         b += (ROOT_DIHEDRAL - TIP_DIHEDRAL) / ((N/2) as f64);
     }
 
+    let mut chord = [0.0; N];
+    let mut c = TIP_CHORD;
+    for i in 0..(N/2) {
+        chord[i] = c;
+        chord[N - i - 1] = c;
+        c += (ROOT_CHORD - TIP_CHORD) / ((N/2) as f64);
+    }
+
     let vlm = Vlm::<N>::new(
         SPAN,
-        CHORD,
+        chord,
         alpha,
         beta,
     );
@@ -44,13 +52,12 @@ fn main() {
     let aoa = 4.0;
 
     println!(
-        "AoA = {:.2} | CL = {:.6} | CDi = {:.6} | L/D = {:.6} | e = {:.6}",
+        "AoA = {:.2} | CL = {:.6} | CDi = {:.6} | L/D = {:.6} | AR = {:.6} | e = {:.6}",
         aoa,
         vlm.cl(aoa),
         vlm.cd(aoa),
         vlm.ld(aoa),
+        vlm.aspect_ratio(),
         vlm.spaneff(aoa),
     );
-
-    vlm.plotcl(aoa);
 }

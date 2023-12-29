@@ -24,6 +24,9 @@ pub struct Vlm<const N: usize> {
     /// Mean aerodynamic chord (meters)
     c: f64,
 
+    /// Chord (meters)
+    chords: Vector<N>,
+
     /// Angle of attack (degrees)
     alpha: Vector<N>,
 
@@ -36,7 +39,7 @@ pub struct Vlm<const N: usize> {
 
 impl<const N: usize> Vlm<N> {
     /// Constructs a new vortex lattice.
-    pub fn new(b: f64, c: f64, alpha: [f64; N], beta: [f64; N]) -> Self {
+    pub fn new(b: f64, chords: [f64; N], alpha: [f64; N], beta: [f64; N]) -> Self {
         let mut alpha_rad = [0.0f64; N];
         let mut beta_rad = [0.0f64; N];
         for i in 0..N {
@@ -44,9 +47,17 @@ impl<const N: usize> Vlm<N> {
             beta_rad[i] = rad(beta[i]);
         }
 
+        // Compute mean aerodynamic chord
+        let mut c = 0.0;
+        for i in 0..N {
+            c += chords[i];
+        }
+        c /= N as f64;
+
         let mut obj = Self {
             b,
             c,
+            chords: chords.into(),
             alpha: alpha_rad.into(),
             beta: beta_rad.into(),
             invq: Matrix::zero(),
@@ -144,7 +155,7 @@ impl<const N: usize> Vlm<N> {
         let ai = self.induced_aoa(aoa);
 
         for i in 0..N {
-            distr[i] = g[i] * self.beta[i].cos() * rad(ai[i]).cos() * self.c;
+            distr[i] = g[i] * self.beta[i].cos() * rad(ai[i]).cos() * self.chords[i];
         }
 
         distr
@@ -181,6 +192,11 @@ impl<const N: usize> Vlm<N> {
     ///     attack in *degrees*.
     pub fn ld(&self, aoa: f64) -> f64 {
         self.cl(aoa) / self.cd(aoa)
+    }
+
+    /// Computes the aspect ratio.
+    pub fn aspect_ratio(&self) -> f64 {
+        self.b / self.c
     }
 
     /// Computes the span efficiency of the wing,

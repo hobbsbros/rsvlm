@@ -4,35 +4,53 @@ mod vlm;
 
 use vlm::Vlm;
 
+use termplot::*;
+
 const N: usize = 250;
+
+const SPAN: f64 = 10.0;
+const CHORD: f64 = 1.0;
+
+const ROOT_AOA: f64 = 0.0;
+const TIP_AOA: f64 = -2.0;
+
+const TIP_DIHEDRAL: f64 = 0.0;
+const ROOT_DIHEDRAL: f64 = 0.0;
 
 fn main() {
     let mut alpha = [0.0; N];
-    let mut a = -2.0;
+    let mut a = TIP_AOA;
     for i in 0..(N/2) {
         alpha[i] = a;
         alpha[N - i - 1] = a;
-        a += 2.0 / ((N/2) as f64);
+        a += (ROOT_AOA - TIP_AOA) / ((N/2) as f64);
+    }
+
+    let mut beta = [0.0; N];
+    let mut b = TIP_DIHEDRAL;
+    for i in 0..(N/2) {
+        beta[i] = -b;
+        beta[N - i - 1] = b;
+        b += (ROOT_DIHEDRAL - TIP_DIHEDRAL) / ((N/2) as f64);
     }
 
     let vlm = Vlm::<N>::new(
-        10.0,
-        1.0,
+        SPAN,
+        CHORD,
         alpha,
-        [0.0; N],
+        beta,
     );
 
-    let mut a = 0.0;
+    let aoa = 4.0;
 
-    while a < 10.0 {
-        println!(
-            "a = {:.2} | CL = {:.6} | CDi = {:.6} | L/D = {:.6} | e = {:.6}",
-            a,
-            vlm.cl(a),
-            vlm.cd(a),
-            vlm.ld(a),
-            vlm.spaneff(a),
-        );
-        a += 1.0;
-    }
+    println!(
+        "AoA = {:.2} | CL = {:.6} | CDi = {:.6} | L/D = {:.6} | e = {:.6}",
+        aoa,
+        vlm.cl(aoa),
+        vlm.cd(aoa),
+        vlm.ld(aoa),
+        vlm.spaneff(aoa),
+    );
+
+    vlm.plotcl(aoa);
 }

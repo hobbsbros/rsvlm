@@ -136,18 +136,31 @@ impl<const N: usize> Vlm<N> {
         self.invq.mult(alpha)
     }
 
-    /// Computes the coefficient of lift, given an angle
+    /// Computes the lift distribution, given an angle
     ///     of attack in *degrees*.
-    pub fn cl(&self, aoa: f64) -> f64 {
-        let mut cl = 0.0;
+    pub fn lift_distribution(&self, aoa: f64) -> Vector<N> {
+        let mut distr = Vector::zero();
         let g = self.solve(aoa);
         let ai = self.induced_aoa(aoa);
 
         for i in 0..N {
-            cl += 2.0 * g[i] * self.beta[i].cos() * rad(ai[i]).cos() / (N as f64);
+            distr[i] = g[i] * self.beta[i].cos() * rad(ai[i]).cos() * self.c;
         }
 
-        cl
+        distr
+    }
+
+    /// Computes the coefficient of lift, given an angle
+    ///     of attack in *degrees*.
+    pub fn cl(&self, aoa: f64) -> f64 {
+        let mut cl = 0.0;
+        let cldistr = self.lift_distribution(aoa);
+
+        for i in 0..N {
+            cl += cldistr[i] * self.b / (N as f64);
+        }
+
+        cl / (0.5 * self.b * self.c)
     }
     
     /// Computes the coefficient of drag, given an angle
